@@ -1,0 +1,76 @@
+<html>
+  <head>
+    <title>XML Text Replacer</title>
+  </head>
+  <body>
+    <h1>XML Text Replacer</h1>
+    <p>Select a XML file and a CSV file with a VIN column to replace the text in the <code>&lt;Vin_Number&gt;</code> elements:</p>
+    Upload XML file: <input type="file" id="xmlFileInput">
+    <br />
+    <br />
+    Upload CSV file: <input type="file" id="csvFileInput">
+    <br />
+    <br />
+    <button id="replaceButton">Replace and download</button>
+
+    <script>
+        // Add an event listener for the file input elements
+        document.getElementById('xmlFileInput').addEventListener('change', function(e) {
+        // Get the file object
+        var xmlFile = e.target.files[0];
+        // Read the file as a text file
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          // Get the file content
+          var xmlString = e.target.result;
+          // Parse the XML string into an XML document object
+          var parser = new DOMParser();
+          var xmlDoc = parser.parseFromString(xmlString, "text/xml");
+          // Get the list of <Vin_Number> elements
+          var vinNumberElements = xmlDoc.getElementsByTagName("Vin_Number");
+          // Add a click event listener for the replace button
+          document.getElementById('replaceButton').addEventListener('click', function() {
+            // Get the CSV file object
+            var csvFile = document.getElementById('csvFileInput').files[0];
+            // Read the CSV file as a text file
+            var csvReader = new FileReader();
+            csvReader.onload = function(e) {
+              // Get the CSV file content
+              var csvString = e.target.result;
+              // Parse the CSV string into an array of rows
+              var rows = csvString.split('\n');
+              // Get the list of VIN numbers from the VIN column in the CSV file
+              var vinNumbers = rows.map(function(row) {
+                return row.split(',')[1];
+              });
+              // remove first item since it is header
+              vinNumbers.shift()
+              // Loop through the <Vin_Number> elements and replace the text with the corresponding VIN number from the list
+              for (var i = 0; i < vinNumberElements.length; i++) {
+                vinNumberElements[i].textContent = vinNumbers[i];
+              }
+              // Convert the updated XML document back to a string
+              var updatedXmlString = new XMLSerializer().serializeToString(xmlDoc);
+
+              // Create a new download link element
+              var downloadLink = document.createElement('a');
+              // Set the download attribute of the link to "modified-vin.xml"
+              downloadLink.download = "modified-vin.xml";
+              // Set the href of the link to the data URI of the updated XML string
+              downloadLink.href = "data:text/xml;charset=utf-8," + encodeURIComponent(updatedXmlString);
+              // Append the link to the body of the page
+              document.body.appendChild(downloadLink);
+              // Click the link to trigger the download
+              downloadLink.click();
+              // Remove the link from the page
+              document.body.removeChild(downloadLink);
+            };
+            csvReader.readAsText(csvFile);
+          });
+        };
+        reader.readAsText(xmlFile);
+      });
+    </script> 
+
+  </body>
+</html>
